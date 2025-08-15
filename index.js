@@ -21,6 +21,23 @@ async function run() {
         const database = client.db("Trackify")
         const expenseCollection = database.collection("Expense")
 
+app.post("/expense", async (req, res) => {
+    const data = req.body;
+
+    try {
+        const result = await expenseCollection.insertOne(data);
+
+        if (result.insertedId) {
+            res.status(201).json({
+                message: "Expense added successfully",
+                insertedId: result.insertedId
+            });
+        }
+
+    } catch (error) {
+        res.status(500).json({ message: "Server error while adding expense" });
+    }
+});
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
