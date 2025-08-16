@@ -84,7 +84,7 @@ async function run() {
             try {
 
                 const updateDoc = {
-                    $set: { title, amount, date, category },
+                    $set: { title, amount: Number(amount), date, category },
                 };
 
                 const result = await expenseCollection.updateOne(
@@ -115,6 +115,33 @@ async function run() {
                 res.status(500).json({ message: " Delete failed", error: error.message });
             }
         });
+
+        app.get("/expenses/total", async (req, res) => {
+            try {
+                const result = await expenseCollection.aggregate([
+                    {
+                        $group: {
+                            _id: null,
+                            totalAmount: { $sum: "$amount" }
+                        }
+                    }
+                ]).toArray();
+
+                res.send({ totalAmount: result[0]?.totalAmount || 0 });
+            } catch (error) {
+
+                res.status(500).send({ message: "Error fetching total amount", error });
+            }
+        });
+
+        app.get("/user/total", async (req, res) => {
+            try {
+                const result = await userCollection.find().toArray();
+                res.send(result)
+            } catch (error) {
+                res.status(500).send({ message: "Error fetching total user", error });
+            }
+        })
 
 
         await client.db("admin").command({ ping: 1 });
