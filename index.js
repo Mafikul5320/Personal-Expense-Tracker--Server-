@@ -8,6 +8,8 @@ const port = process.env.PORT || 3000
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
+
+
 const client = new MongoClient(process.env.MONGODB_URI, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -58,14 +60,16 @@ async function run() {
 
         app.get("/expenses", async (req, res) => {
             const { id } = req.query;
+            const { email } = req.query;
+            console.log(req.query)
 
             try {
                 if (id) {
                     const expense = await expenseCollection.findOne({ _id: new ObjectId(id) });
                     res.send(expense);
                 }
-                else {
-                    const expenses = await expenseCollection.find().toArray();
+                if (email) {
+                    const expenses = await expenseCollection.find({ email: email }).toArray();
                     res.status(200).send(expenses)
                 }
             } catch (error) {
@@ -118,18 +122,24 @@ async function run() {
 
         app.get("/expenses/total", async (req, res) => {
             try {
-                const result = await expenseCollection.aggregate([
-                    {
-                        $group: {
-                            _id: null,
-                            totalAmount: { $sum: "$amount" }
+                const { email } = req.query;
+                if (email) {
+
+                    const result = await expenseCollection.aggregate([
+                        {
+                            $match: { email: email }
+                        },
+                        {
+                            $group: {
+                                _id: null,
+                                totalAmount: { $sum: "$amount" }
+                            }
                         }
-                    }
-                ]).toArray();
+                    ]).toArray();
 
-                res.send({ totalAmount: result[0]?.totalAmount || 0 });
+                    res.send({ totalAmount: result[0]?.totalAmount || 0 });
+                }
             } catch (error) {
-
                 res.status(500).send({ message: "Error fetching total amount", error });
             }
         });
